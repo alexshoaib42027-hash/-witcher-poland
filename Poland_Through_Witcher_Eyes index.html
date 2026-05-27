@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="description" content="Poland Through Witcher Eyes — An immersive journey through Polish folklore, culture, and mythology via the dark fantasy lens of The Witcher."/>
+<title>Poland Through Witcher Eyes: Folklore, Greyness, and Grit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+/* ==================================================
+   DESIGN TOKENS
+===================================================*/
+:root {
+  --ink: #0a0a0e;
+  --deep: #0e0e14;
+  --charcoal: #161620;
+  --char-light: #1e1e2a;
+  --fog: #6e6e7e;
+  --fog-light: #9e9eaa;
+  --parchment: #d8ceb0;
+  --parch-dim: #b0a480;
+  --gold: #c8a84c;
+  --gold-dim: #8e7030;
+  --gold-bright: #e8cc60;
+  --bark: #2a1e12;
+  --bark-light: #3e2e1a;
+  --bark-mid: #5a4028;
+  --forest: #1a2e1a;
+  --forest-glow: #2e4e2a;
+  --blood: #4e1818;
+  --vein: rgba(200, 168, 76, 0.08);
+  --vein-bright: rgba(200, 168, 76, 0.18);
+}
+
+/* ==================================================
+   RESET
+===================================================*/
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scrollbar-width: thin; scrollbar-color: var(--gold-dim) var(--ink); }
+body {
+  font-family: 'Crimson Text', Georgia, serif;
+  background: var(--ink);
+  color: var(--fog-light);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
+}
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--ink); }
+::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 3px; }
+h1, h2, h3, h4 { font-family: 'Cinzel', serif; color: var(--parchment); letter-spacing: .04em; line-height: 1.2; }
+
+/* ==================================================
+   LOADING SCREEN
+===================================================*/
+#loader {
+  position: fixed; inset: 0; z-index: 10000; background: #050508;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: opacity 1.4s cubic-bezier(.22,1,.36,1);
+}
+#loader.done { opacity: 0; pointer-events: none; }
+
+/* SVG tree that draws itself */
+#loader-tree { width: 200px; height: 360px; margin-bottom: 1.5rem; }
+#loader-tree path {
+  fill: none; stroke: var(--gold-dim); stroke-width: 2; stroke-linecap: round;
+  stroke-dasharray: var(--len); stroke-dashoffset: var(--len);
+}
+#loader-tree .root-line { stroke: var(--bark-mid); stroke-width: 1.5; }
+#loader-tree .rune-dot { fill: var(--gold); opacity: 0; }
+
+.l-title {
+  font-family: 'Cinzel', serif; font-size: clamp(1rem, 3vw, 1.4rem);
+  color: var(--parchment); letter-spacing: .14em; text-transform: uppercase;
+  opacity: 0; transform: translateY(15px);
+}
+.l-sub {
+  font-family: 'Crimson Text', serif; font-style: italic; font-size: .95rem;
+  color: var(--fog); margin-top: .4em; opacity: 0;
+}
+.l-enter {
+  font-family: 'Cinzel', serif; font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--gold); background: transparent; border: 1px solid var(--gold-dim);
+  padding: .75em 2em; margin-top: 1.8rem; cursor: pointer; border-radius: 2px;
+  opacity: 0; transition: all .4s;
+}
+.l-enter:hover { background: rgba(200,168,76,.06); border-color: var(--gold); box-shadow: 0 0 30px rgba(200,168,76,.08); }
+
+/* ==================================================
+   CANVAS (particles)
+===================================================*/
+#dust-canvas { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+
+/* ==================================================
+   ATMOSPHERIC FOG (CSS only)
+===================================================*/
+.atmo-fog {
+  position: fixed; inset: 0; pointer-events: none; z-index: 2; opacity: 0; transition: opacity 3s;
+}
+.atmo-fog.on { opacity: 1; }
+.af1 {
+  background: radial-gradient(ellipse at 25% 85%, rgba(42,30,18,.12) 0%, transparent 50%),
+              radial-gradient(ellipse at 75% 15%, rgba(200,168,76,.03) 0%, transparent 40%);
+  animation: fogA 28s ease-in-out infinite alternate;
+}
+.af2 {
+  background: radial-gradient(ellipse at 60% 60%, rgba(26,46,26,.06) 0%, transparent 40%);
+  animation: fogB 35s ease-in-out infinite alternate;
+}
+@keyframes fogA { from { transform: translate(0,0) scale(1); } to { transform: translate(20px,-15px) scale(1.03); } }
+@keyframes fogB { from { transform: translate(0,0); } to { transform: translate(-25px,18px); } }
+
+/* ==================================================
+   LIVING VEIN — the vertical line that runs the page
+   This IS the tree's presence through the content.
+===================================================*/
+.vein-line {
+  position: absolute; left: 50%; top: 0; width: 2px; height: 100%;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    var(--vein) 5%,
+    var(--vein-bright) 15%,
+    var(--vein) 30%,
+    var(--vein-bright) 50%,
+    var(--vein) 70%,
+    var(--vein-bright) 85%,
+    var(--vein) 95%,
+    transparent 100%);
+  transform: translateX(-50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Branch node on the vein */
+.branch-node {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--gold-dim); border: 2px solid var(--charcoal);
+  box-shadow: 0 0 0 3px rgba(200,168,76,.1), 0 0 15px rgba(200,168,76,.08);
+  z-index: 3; transition: all .5s;
+}
+.branch-node.lit {
+  background: var(--gold);
+  box-shadow: 0 0 0 4px rgba(200,168,76,.15), 0 0 25px rgba(200,168,76,.2);
+}
+
+/* Root/branch divider SVG */
+.organic-divider {
+  display: block; width: 100%; max-width: 600px; margin: 0 auto;
+  height: 60px; position: relative; z-index: 3;
+}
+.organic-divider path {
+  fill: none; stroke: var(--vein-bright); stroke-width: 1.2; stroke-linecap: round;
+}
+
+/* ==================================================
+   NAVIGATION
+===================================================*/
+#nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 0 1.5rem;
+  transform: translateY(-100%); transition: transform .5s cubic-bezier(.22,1,.36,1), background .4s;
+}
+#nav.show { transform: translateY(0); }
+#nav.scrolled { background: rgba(10,10,14,.92); backdrop-filter: blur(12px); box-shadow: 0 1px 25px rgba(0,0,0,.5); }
+.nav-in { max-width: 1000px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 52px; }
+.nav-brand { font-family: 'Cinzel', serif; font-size: .72rem; color: var(--gold); letter-spacing: .12em; text-transform: uppercase; }
+.nav-links { display: flex; gap: 1.4rem; list-style: none; }
+.nav-links a {
+  font-family: 'Inter', sans-serif; font-size: .65rem; font-weight: 500; color: var(--fog);
+  text-transform: uppercase; letter-spacing: .08em; text-decoration: none;
+  transition: color .3s; position: relative;
+}
+.nav-links a::after { content: ''; position: absolute; bottom: -3px; left: 0; width: 0; height: 1px; background: var(--gold); transition: width .3s; }
+.nav-links a:hover, .nav-links a.active { color: var(--gold); }
+.nav-links a:hover::after, .nav-links a.active::after { width: 100%; }
+.hamburger { display: none; background: none; border: none; cursor: pointer; padding: 4px; }
+.hamburger span { display: block; width: 18px; height: 1.5px; background: var(--parchment); margin: 4px 0; transition: all .3s; }
+.hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(4px,4px); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(4px,-4px); }
+
+/* ==================================================
+   AUDIO TOGGLE
+===================================================*/
+#audio-btn {
+  position: fixed; bottom: 1.2rem; right: 1.2rem; z-index: 100;
+  width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(14,14,20,.7); border: 1px solid rgba(200,168,76,.12);
+  color: var(--fog); font-size: 1rem; cursor: pointer;
+  backdrop-filter: blur(8px); transition: all .3s;
+}
+#audio-btn:hover { border-color: var(--gold); color: var(--gold); }
+#audio-btn.on { color: var(--gold); border-color: var(--gold-dim); }
+
+/* ==================================================
+   SECTIONS
+===================================================*/
+.scene { position: relative; padding: 6rem 1.5rem; overflow: hidden; }
+.scene-inner { max-width: 760px; margin: 0 auto; position: relative; z-index: 5; }
+.wide-inner { max-width: 960px; }
+
+.sc-label {
+  font-family: 'Inter', sans-serif; font-size: .6rem; text-transform: uppercase;
+  letter-spacing: .18em; color: var(--gold-dim); margin-bottom: .6rem; display: block;
+}
+.sc-title {
+  font-size: clamp(1.5rem, 4vw, 2.4rem); color: var(--parchment); margin-bottom: .4em;
+}
+.sc-subtitle {
+  font-style: italic; color: var(--fog); font-size: 1rem;
+  max-width: 550px; margin-bottom: 2rem;
+}
+.sc-p {
+  font-size: 1rem; color: var(--fog-light); line-height: 1.85; margin-bottom: .7em;
+}
+.sc-p em { color: var(--parch-dim); }
+
+/* Section root accents — bark-like borders */
+.root-accent {
+  position: absolute; pointer-events: none; z-index: 1;
+}
+.root-left {
+  left: 0; top: 10%; width: 120px; height: 80%;
+  background: linear-gradient(90deg, rgba(42,30,18,.08), transparent);
+  border-left: 2px solid var(--vein);
+  border-radius: 0 40px 40px 0;
+}
+.root-right {
+  right: 0; top: 15%; width: 100px; height: 70%;
+  background: linear-gradient(-90deg, rgba(42,30,18,.06), transparent);
+  border-right: 2px solid var(--vein);
+  border-radius: 40px 0 0 40px;
+}
+
+/* ==================================================
+   HERO
+===================================================*/
+#hero {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center;
+  background:
+    radial-gradient(ellipse at 50% 90%, rgba(42,30,18,.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 20%, rgba(16,16,24,.8) 0%, transparent 60%),
+    var(--ink);
+}
+
+/* Hero tree silhouette — pure CSS art */
+.hero-tree {
+  position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+  width: 300px; height: 60vh; pointer-events: none; z-index: 1; opacity: .06;
+}
+.hero-tree .t-trunk {
+  position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+  width: 40px; height: 100%; border-radius: 30px;
+  background: linear-gradient(180deg, transparent 0%, var(--bark-mid) 30%, var(--bark) 100%);
+}
+.hero-tree .t-branch {
+  position: absolute; height: 4px; border-radius: 20px;
+  background: var(--bark-mid); transform-origin: left center;
+}
+.hero-tree .tb1 { width: 120px; top: 15%; left: 50%; transform: rotate(-30deg); }
+.hero-tree .tb2 { width: 140px; top: 15%; right: 50%; transform: rotate(210deg); }
+.hero-tree .tb3 { width: 100px; top: 30%; left: 50%; transform: rotate(-20deg); }
+.hero-tree .tb4 { width: 110px; top: 30%; right: 50%; transform: rotate(200deg); }
+.hero-tree .tb5 { width: 80px; top: 8%; left: 50%; transform: rotate(-40deg); }
+.hero-tree .tb6 { width: 90px; top: 8%; right: 50%; transform: rotate(220deg); }
+.hero-tree .t-root { position: absolute; height: 3px; border-radius: 20px; background: var(--bark); bottom: 0; }
+.hero-tree .tr1 { width: 100px; left: 35%; transform: rotate(30deg); transform-origin: right; }
+.hero-tree .tr2 { width: 110px; right: 35%; transform: rotate(-25deg); transform-origin: left; }
+
+.hero-content { position: relative; z-index: 5; }
+#hero h1 {
+  font-size: clamp(2.2rem, 7vw, 4.5rem); color: var(--parchment); margin-bottom: .15em;
+  opacity: 0; transform: translateY(35px);
+}
+#hero h1 .h-accent {
+  display: block; font-size: .35em; color: var(--gold); letter-spacing: .2em;
+  margin-top: .4em; font-weight: 400;
+}
+.hero-tag {
+  font-size: clamp(.95rem, 2.5vw, 1.15rem); color: var(--fog); max-width: 560px;
+  margin: 0 auto 2rem; font-style: italic; opacity: 0; transform: translateY(25px);
+}
+.hero-btn {
+  display: inline-flex; align-items: center; gap: .6em;
+  font-family: 'Cinzel', serif; font-size: .76rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--parchment); background: transparent; border: 1px solid var(--gold-dim);
+  padding: .8em 2em; cursor: pointer; transition: all .5s;
+  opacity: 0; transform: translateY(18px);
+}
+.hero-btn:hover {
+  background: rgba(200,168,76,.06); border-color: var(--gold); color: var(--gold);
+  box-shadow: 0 0 35px rgba(200,168,76,.08);
+}
+.hero-btn svg { width: 13px; height: 13px; transition: transform .3s; }
+.hero-btn:hover svg { transform: translateY(3px); }
+
+/* Scroll hint */
+.scroll-cue {
+  position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); text-align: center;
+  font-family: 'Inter', sans-serif; font-size: .58rem; color: var(--fog); letter-spacing: .12em;
+  text-transform: uppercase; opacity: 0; z-index: 5;
+}
+.scroll-cue::after {
+  content: ''; display: block; width: 1px; height: 28px; margin: 6px auto 0;
+  background: var(--gold-dim); animation: scrollPulse 2s ease-in-out infinite;
+}
+@keyframes scrollPulse { 0%,100% { opacity: .15; transform: scaleY(.5); } 50% { opacity: .5; transform: scaleY(1); } }
+
+/* ==================================================
+   EXPAND CARDS
+===================================================*/
+.ex-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+.ex-card {
+  background: rgba(255,255,255,.015); border: 1px solid rgba(255,255,255,.05);
+  border-radius: 6px; padding: 1.4rem 1.2rem; cursor: pointer;
+  transition: all .4s; position: relative; overflow: hidden;
+}
+.ex-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  transform: scaleX(0); transition: transform .4s;
+}
+.ex-card:hover { background: rgba(255,255,255,.025); border-color: rgba(200,168,76,.12);
+  transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+.ex-card:hover::before { transform: scaleX(1); }
+.ex-card .ic { font-size: 1.4rem; margin-bottom: .4rem; display: block; }
+.ex-card h3 { font-size: .92rem; color: var(--parchment); margin-bottom: .25rem; transition: color .3s; }
+.ex-card:hover h3 { color: var(--gold); }
+.ex-card .tease { font-family: 'Inter', sans-serif; font-size: .8rem; color: var(--fog); line-height: 1.5; }
+.ex-card .detail {
+  max-height: 0; overflow: hidden; opacity: 0;
+  transition: max-height .5s cubic-bezier(.22,1,.36,1), opacity .4s, padding .3s;
+  font-size: .92rem; color: var(--fog-light); line-height: 1.7;
+}
+.ex-card.open .detail {
+  max-height: 220px; opacity: 1; padding-top: .8rem; margin-top: .8rem;
+  border-top: 1px solid rgba(200,168,76,.08);
+}
+.ex-card .hint {
+  font-family: 'Inter', sans-serif; font-size: .58rem; color: var(--gold-dim);
+  text-transform: uppercase; letter-spacing: .1em; margin-top: .5rem;
+  display: flex; align-items: center; gap: .3em;
+}
+.ex-card .hint .a { transition: transform .3s; font-size: .6rem; }
+.ex-card.open .hint .a { transform: rotate(180deg); }
+
+/* ==================================================
+   TABS
+===================================================*/
+.tab-row { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: 1.5rem; }
+.tab-b {
+  font-family: 'Inter', sans-serif; font-size: .68rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--fog);
+  background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05);
+  border-radius: 3px; padding: .4em .85em; cursor: pointer; transition: all .3s;
+}
+.tab-b:hover { color: var(--parchment); border-color: rgba(200,168,76,.2); }
+.tab-b.on { color: var(--gold); border-color: var(--gold-dim); background: rgba(200,168,76,.05); }
+.tp { display: none; animation: fadeUp .4s ease; }
+.tp.on { display: block; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.tc {
+  background: rgba(255,255,255,.012); border: 1px solid rgba(255,255,255,.04);
+  border-radius: 6px; padding: 1.6rem;
+}
+.tc h3 { font-size: 1.05rem; margin-bottom: .4em; }
+.tc p { font-size: .95rem; color: var(--fog-light); line-height: 1.8; margin-bottom: .5em; }
+.tc .qt { border-left: 2px solid var(--gold-dim); padding-left: 1em; margin: 1em 0; font-style: italic; color: var(--parch-dim); }
+
+/* ==================================================
+   GREETING
+===================================================*/
+.gr-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.gr-card {
+  background: rgba(255,255,255,.018); border: 1px solid rgba(200,168,76,.08);
+  border-radius: 8px; padding: 1.5rem 1.1rem; text-align: center; transition: all .3s;
+}
+.gr-card:hover { background: rgba(200,168,76,.025); border-color: rgba(200,168,76,.15); }
+.gr-word { font-family: 'Cinzel', serif; font-size: 1.5rem; color: var(--gold); margin-bottom: .15em; }
+.gr-phon { font-family: 'Inter', sans-serif; font-size: .78rem; color: var(--fog); letter-spacing: .04em; margin-bottom: .3em; }
+.gr-mean { font-size: .92rem; color: var(--parch-dim); margin-bottom: .4em; }
+.gr-use { font-family: 'Inter', sans-serif; font-size: .7rem; color: var(--fog); line-height: 1.6; padding-top: .5em; border-top: 1px solid rgba(255,255,255,.04); }
+.pr-btn {
+  display: inline-flex; align-items: center; gap: .3em;
+  font-family: 'Inter', sans-serif; font-size: .65rem; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--gold-dim); background: rgba(200,168,76,.05); border: 1px solid rgba(200,168,76,.1);
+  border-radius: 18px; padding: .3em .75em; cursor: pointer; margin: .5em 0; transition: all .3s;
+}
+.pr-btn:hover { background: rgba(200,168,76,.1); color: var(--gold); }
+.pr-tip {
+  display: none; margin-top: .4em; padding: .5em; background: rgba(0,0,0,.2);
+  border-radius: 3px; font-family: 'Inter', sans-serif; font-size: .75rem;
+  color: var(--parch-dim); line-height: 1.6; text-align: left;
+}
+.pr-tip.show { display: block; animation: fadeUp .3s ease; }
+
+/* ==================================================
+   MONSTERS
+===================================================*/
+.m-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+.m-card {
+  background: rgba(255,255,255,.015); border: 1px solid rgba(255,255,255,.04);
+  border-radius: 8px; padding: 1.4rem 1.2rem; cursor: pointer;
+  transition: all .4s; position: relative; overflow: hidden;
+}
+.m-card::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 30%, rgba(200,168,76,.06), transparent 60%);
+  opacity: 0; transition: opacity .5s;
+}
+.m-card:hover { background: rgba(255,255,255,.025); border-color: rgba(200,168,76,.12);
+  transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+.m-card:hover::after { opacity: 1; }
+.m-card .m-content { position: relative; z-index: 2; }
+.m-card .eyes { margin-bottom: .5em; }
+.m-card .eye {
+  width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: .5rem;
+  background: var(--gold); box-shadow: 0 0 12px rgba(200,168,76,.4);
+  animation: eyeBlink 7s infinite; opacity: .4; transition: opacity .8s;
+}
+.m-card:hover .eye { opacity: 1; }
+@keyframes eyeBlink { 0%,92%,100% { opacity: inherit; } 95% { opacity: .1; } }
+.m-card h3 { font-size: .95rem; color: var(--parchment); margin-bottom: .15em; transition: color .3s; }
+.m-card:hover h3 { color: var(--gold); }
+.m-card .m-type { font-family: 'Inter', sans-serif; font-size: .6rem; text-transform: uppercase; letter-spacing: .1em; color: var(--gold-dim); margin-bottom: .5em; }
+.m-card .m-short { font-family: 'Crimson Text', serif; font-size: .88rem; color: var(--fog); line-height: 1.6; }
+.m-card .m-lore {
+  max-height: 0; overflow: hidden; opacity: 0;
+  transition: max-height .5s ease, opacity .4s, padding .3s;
+  font-size: .88rem; color: var(--fog-light); line-height: 1.7;
+}
+.m-card.open .m-lore {
+  max-height: 200px; opacity: 1; padding-top: .6em; margin-top: .6em;
+  border-top: 1px solid rgba(200,168,76,.06);
+}
+.m-card .ftag { font-family: 'Inter', sans-serif; font-size: .58rem; text-transform: uppercase; letter-spacing: .08em; color: var(--forest-glow); margin-top: .5em; }
+.m-card .tap { font-family: 'Inter', sans-serif; font-size: .55rem; color: var(--fog); text-transform: uppercase; letter-spacing: .06em; margin-top: .5em; opacity: .35; }
+
+/* ==================================================
+   FOOD
+===================================================*/
+.food-hero {
+  background: rgba(255,255,255,.018); border: 1px solid rgba(200,168,76,.08);
+  border-radius: 8px; padding: 2rem 1.5rem; text-align: center; max-width: 500px;
+  margin: 0 auto 1.2rem; transition: all .3s;
+}
+.food-hero:hover { border-color: rgba(200,168,76,.18); background: rgba(200,168,76,.02); }
+.food-hero .fi { font-size: 2.4rem; margin-bottom: .3em; display: block; }
+.food-hero h3 { font-size: 1.2rem; margin-bottom: .15em; }
+.food-hero .dtag { font-family: 'Inter', sans-serif; font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; color: var(--gold-dim); margin-bottom: .6em; }
+.food-hero p { font-size: .92rem; color: var(--fog-light); line-height: 1.7; max-width: 400px; margin: 0 auto; }
+.food-row { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; max-width: 500px; margin: 0 auto; }
+.food-sm {
+  background: rgba(255,255,255,.012); border: 1px solid rgba(255,255,255,.04);
+  border-radius: 6px; padding: 1.1rem .9rem; text-align: center; transition: all .3s;
+}
+.food-sm:hover { background: rgba(255,255,255,.025); border-color: rgba(200,168,76,.08); }
+.food-sm .si { font-size: 1.4rem; margin-bottom: .2em; }
+.food-sm h4 { font-size: .85rem; margin-bottom: .2em; }
+.food-sm p { font-family: 'Inter', sans-serif; font-size: .75rem; color: var(--fog); line-height: 1.5; }
+
+/* Section warmth for food */
+#food .warm-glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%, rgba(180,120,40,.04), transparent 50%);
+  animation: warmFlick 3.5s ease-in-out infinite alternate;
+}
+@keyframes warmFlick { 0% { opacity: .5; } 50% { opacity: 1; } 100% { opacity: .6; } }
+
+/* ==================================================
+   QUIRKY
+===================================================*/
+.qk-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .9rem; }
+.qk {
+  background: rgba(255,255,255,.012); border: 1px solid rgba(255,255,255,.04);
+  border-radius: 6px; padding: 1.1rem; transition: all .3s;
+}
+.qk:hover { background: rgba(255,255,255,.025); border-color: rgba(200,168,76,.08); transform: translateY(-2px); }
+.qk .qi { font-size: 1.1rem; margin-bottom: .25em; }
+.qk h4 { font-size: .82rem; margin-bottom: .25em; }
+.qk p { font-family: 'Inter', sans-serif; font-size: .76rem; color: var(--fog); line-height: 1.5; }
+.qk em { color: var(--parch-dim); font-family: 'Crimson Text', serif; }
+
+/* ==================================================
+   QUIZ
+===================================================*/
+.quiz-box {
+  max-width: 580px; margin: 2rem auto 0; background: rgba(255,255,255,.012);
+  border: 1px solid rgba(200,168,76,.08); border-radius: 8px; padding: 1.8rem;
+}
+.qz-title { font-family: 'Cinzel', serif; font-size: .95rem; color: var(--parchment); text-align: center; margin-bottom: .2em; }
+.qz-sub { font-family: 'Inter', sans-serif; font-size: .68rem; color: var(--fog); text-align: center; margin-bottom: 1.1em; }
+.qz-dots { display: flex; justify-content: center; gap: .3rem; margin-bottom: .9rem; }
+.qz-dot { width: 9px; height: 9px; border-radius: 50%; border: 1px solid rgba(200,168,76,.18); background: transparent; transition: all .5s; }
+.qz-dot.ok { background: var(--forest-glow); border-color: var(--forest-glow); box-shadow: 0 0 6px rgba(46,78,42,.3); }
+.qz-dot.no { background: var(--blood); border-color: var(--blood); box-shadow: 0 0 6px rgba(78,24,24,.3); }
+.qz-dot.now { border-color: var(--gold); box-shadow: 0 0 5px rgba(200,168,76,.15); }
+.qz-q { font-size: .95rem; color: var(--parch-dim); text-align: center; margin-bottom: .9em; }
+.qz-opts { display: grid; gap: .5rem; }
+.qz-opt {
+  display: block; width: 100%; text-align: left;
+  font-family: 'Inter', sans-serif; font-size: .8rem; color: var(--fog-light);
+  background: rgba(255,255,255,.015); border: 1px solid rgba(255,255,255,.05);
+  border-radius: 4px; padding: .7em 1em; cursor: pointer; transition: all .25s;
+}
+.qz-opt:hover:not(:disabled) { background: rgba(200,168,76,.04); border-color: rgba(200,168,76,.18); color: var(--parchment); }
+.qz-opt.ok { background: rgba(46,78,42,.12); border-color: var(--forest-glow); color: #8abf8c; }
+.qz-opt.no { background: rgba(78,24,24,.1); border-color: var(--blood); color: #bf7070; }
+.qz-opt:disabled { cursor: default; opacity: .55; }
+.qz-fb { text-align: center; margin-top: .6rem; font-size: .8rem; min-height: 1.2em; }
+.qz-fb.good { color: #8abf8c; } .qz-fb.bad { color: #bf7070; }
+.qz-next {
+  display: none; margin: .8rem auto 0;
+  font-family: 'Inter', sans-serif; font-size: .67rem; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--gold); background: rgba(200,168,76,.04); border: 1px solid var(--gold-dim);
+  border-radius: 3px; padding: .45em 1.2em; cursor: pointer; transition: all .3s;
+}
+.qz-next:hover { background: rgba(200,168,76,.1); }
+.qz-res { text-align: center; padding: .8rem 0; }
+.qz-res h4 { font-family: 'Cinzel', serif; font-size: 1.05rem; color: var(--gold); margin-bottom: .3em; }
+.qz-res p { font-size: .88rem; color: var(--fog-light); line-height: 1.6; }
+.qz-res .arch { font-family: 'Cinzel', serif; font-size: .75rem; color: var(--parch-dim); margin-top: .7em; letter-spacing: .1em; }
+
+/* ==================================================
+   CLOSING
+===================================================*/
+#closing { text-align: center; min-height: 60vh; display: flex; align-items: center; }
+.cl-text p { font-size: 1.05rem; color: var(--fog-light); line-height: 1.9; margin-bottom: .8em; }
+.cl-text em { color: var(--parch-dim); }
+.cl-sign { margin-top: 1.8rem; font-family: 'Cinzel', serif; font-size: .75rem; letter-spacing: .18em; color: var(--gold-dim); text-transform: uppercase; }
+
+/* ==================================================
+   FOOTER
+===================================================*/
+footer { text-align: center; padding: 1.5rem; font-family: 'Inter', sans-serif; font-size: .58rem; color: rgba(110,110,126,.35); border-top: 1px solid rgba(255,255,255,.02); z-index: 5; position: relative; }
+
+/* ==================================================
+   RESPONSIVE
+===================================================*/
+@media (max-width: 768px) {
+  .scene { padding: 4rem 1rem; }
+  .nav-links { position: fixed; top: 52px; left: 0; right: 0; bottom: 0; background: rgba(10,10,14,.97);
+    flex-direction: column; align-items: center; justify-content: center; gap: 1.6rem;
+    transform: translateX(100%); transition: transform .4s cubic-bezier(.22,1,.36,1); }
+  .nav-links.open { transform: translateX(0); }
+  .nav-links a { font-size: .82rem; }
+  .hamburger { display: block; }
+  .ex-grid, .m-grid, .qk-grid { grid-template-columns: 1fr; }
+  .gr-row, .food-row { grid-template-columns: 1fr; }
+  .root-accent { display: none; }
+  .vein-line { display: none; }
+  .hero-tree { opacity: .03; }
+  #hero h1 { font-size: 1.7rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ====== LOADING SCREEN ====== -->
+<div id="loader">
+  <svg id="loader-tree" viewBox="0 0 200 340" xmlns="http://www.w3.org/2000/svg">
+    <path class="root-line" d="M100,280 C82,310 55,320 30,315" style="--len:120"/>
+    <path class="root-line" d="M100,280 C118,310 145,320 170,315" style="--len:120"/>
+    <path class="root-line" d="M100,280 C88,300 65,308 45,306" style="--len:100"/>
+    <path class="root-line" d="M100,280 C112,300 135,308 155,306" style="--len:100"/>
+    <path d="M100,280 C98,240 96,200 97,160 C98,120 100,80 100,45" style="--len:250"/>
+    <path d="M96,260 C94,230 93,205 95,170" style="--len:100"/>
+    <path d="M104,260 C106,230 107,205 105,170" style="--len:100"/>
+    <path d="M97,190 C78,175 52,168 28,164" style="--len:100"/>
+    <path d="M103,190 C122,175 148,168 172,164" style="--len:100"/>
+    <path d="M98,140 C76,128 48,122 22,120" style="--len:110"/>
+    <path d="M102,140 C124,128 152,122 178,120" style="--len:110"/>
+    <path d="M99,100 C84,86 62,78 42,72" style="--len:90"/>
+    <path d="M101,100 C116,86 138,78 158,72" style="--len:90"/>
+    <path d="M100,60 C90,45 74,34 60,24" style="--len:70"/>
+    <path d="M100,60 C110,45 126,34 140,24" style="--len:70"/>
+    <circle class="rune-dot" cx="100" cy="230" r="3"/>
+    <circle class="rune-dot" cx="100" cy="170" r="3"/>
+    <circle class="rune-dot" cx="100" cy="115" r="3"/>
+    <circle class="rune-dot" cx="100" cy="65" r="3"/>
+  </svg>
+  <div class="l-title">Poland Through Witcher Eyes</div>
+  <div class="l-sub">Folklore, Greyness, and Grit</div>
+  <button class="l-enter" id="l-enter">Awaken</button>
+</div>
+
+<!-- ====== ATMOSPHERIC ====== -->
+<canvas id="dust-canvas"></canvas>
+<div class="atmo-fog af1" id="af1"></div>
+<div class="atmo-fog af2" id="af2"></div>
+
+<!-- ====== AUDIO ====== -->
+<button id="audio-btn" title="Toggle ambient sound">🔇</button>
+
+<!-- ====== NAV ====== -->
+<nav id="nav">
+  <div class="nav-in">
+    <div class="nav-brand">Witcher Eyes</div>
+    <button class="hamburger" id="ham" aria-label="Menu"><span></span><span></span><span></span></button>
+    <ul class="nav-links" id="nlinks">
+      <li><a href="#why" data-s="why">Origins</a></li>
+      <li><a href="#behind" data-s="behind">Fantasy</a></li>
+      <li><a href="#greet" data-s="greet">Greeting</a></li>
+      <li><a href="#monsters" data-s="monsters">Monsters</a></li>
+      <li><a href="#food" data-s="food">Taste</a></li>
+      <li><a href="#quirky" data-s="quirky">Quirks</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ====== MAIN WRAPPER (contains vein line) ====== -->
+<main style="position:relative">
+<div class="vein-line"></div>
+
+<!-- ====== HERO ====== -->
+<section id="hero" class="scene">
+  <div class="hero-tree">
+    <div class="t-trunk"></div>
+    <div class="t-branch tb1"></div><div class="t-branch tb2"></div>
+    <div class="t-branch tb3"></div><div class="t-branch tb4"></div>
+    <div class="t-branch tb5"></div><div class="t-branch tb6"></div>
+    <div class="t-root tr1"></div><div class="t-root tr2"></div>
+  </div>
+  <div class="hero-content">
+    <h1 id="h-title">Poland Through<br>Witcher Eyes<span class="h-accent">Folklore · Greyness · Grit</span></h1>
+    <p class="hero-tag" id="h-tag">The Witcher is one of Poland's most recognizable cultural exports — a doorway into Polish imagination, folklore, and a worldview that sits comfortably with moral complexity.</p>
+    <button class="hero-btn" id="h-btn" onclick="document.getElementById('why').scrollIntoView({behavior:'smooth'})">
+      Enter the Continent
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+    </button>
+  </div>
+  <div class="scroll-cue" id="scroll-cue">Scroll to explore</div>
+</section>
+
+<!-- ====== ORGANIC DIVIDER ====== -->
+<svg class="organic-divider" viewBox="0 0 600 60"><path d="M300,5 C280,15 240,20 180,22 C120,24 60,18 0,30"/><path d="M300,5 C320,15 360,20 420,22 C480,24 540,18 600,30"/><path d="M300,5 C298,20 295,35 290,55"/><path d="M300,5 C302,20 305,35 310,55"/></svg>
+
+<!-- ====== WHY POLISH ====== -->
+<section id="why" class="scene">
+  <div class="root-accent root-left"></div>
+  <div class="scene-inner reveal">
+    <span class="sc-label">The Continent's Roots</span>
+    <h2 class="sc-title">Why The Witcher Feels Polish</h2>
+    <p class="sc-subtitle">It's not just the monsters. It's the mud, the morality, and the meaning underneath.</p>
+    <div class="ex-grid">
+      <div class="ex-card" onclick="toggleEx(this)">
+        <span class="ic">⚖️</span><h3>Moral Greyness</h3>
+        <p class="tease">No clean heroes. No pure villains. Every choice costs something.</p>
+        <div class="detail">In The Witcher, decisions rarely come with a "right" answer. You choose between bad and worse — a reflection of Poland's own historical experience, where survival often meant compromise.</div>
+        <div class="hint"><span>Read more</span><span class="a">▼</span></div>
+      </div>
+      <div class="ex-card" onclick="toggleEx(this)">
+        <span class="ic">🌾</span><h3>Peasant Realism</h3>
+        <p class="tease">Muddy villages, starving farmers, lords who don't care.</p>
+        <div class="detail">The Witcher shows life from the bottom. Peasants are overworked, roads are dangerous, and power serves itself — mirroring historical Poland, caught between empires.</div>
+        <div class="hint"><span>Read more</span><span class="a">▼</span></div>
+      </div>
+      <div class="ex-card" onclick="toggleEx(this)">
+        <span class="ic">👹</span><h3>Slavic Creatures</h3>
+        <p class="tease">Striga, leshen, vodyanoy — from Slavic nightmares, not Norse myth.</p>
+        <div class="detail">The bestiary pulls from specifically Polish folklore — spirits of drowned women, forest demons, cursed nobles. These come from fireside stories told in Polish villages for centuries.</div>
+        <div class="hint"><span>Read more</span><span class="a">▼</span></div>
+      </div>
+      <div class="ex-card" onclick="toggleEx(this)">
+        <span class="ic">💀</span><h3>Dark Humor</h3>
+        <p class="tease">Laugh or cry — often both at the same time.</p>
+        <div class="detail">Polish humor is dry, self-deprecating, and pitch-black. Geralt's deadpan commentary, characters cracking jokes before death — this gallows humor is deeply embedded in the Polish spirit.</div>
+        <div class="hint"><span>Read more</span><span class="a">▼</span></div>
+      </div>
+      <div class="ex-card" onclick="toggleEx(this)">
+        <span class="ic">🏰</span><h3>War-Scarred Lands</h3>
+        <p class="tease">Burned fields, displaced people, political games at every border.</p>
+        <div class="detail">The Continent echoes Poland's turbulent past: partitions, occupations, uprisings. The landscape feels specifically Central-Eastern European — windswept, contested, resilient.</div>
+        <div class="hint"><span>Read more</span><span class="a">▼</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<svg class="organic-divider" viewBox="0 0 600 60"><path d="M300,55 C260,45 200,40 120,38 C60,36 20,42 0,30"/><path d="M300,55 C340,45 400,40 480,38 C540,36 580,42 600,30"/></svg>
+
+<!-- ====== BEHIND THE FANTASY ====== -->
+<section id="behind" class="scene">
+  <div class="root-accent root-right"></div>
+  <div class="scene-inner reveal">
+    <span class="sc-label">Beneath the myth</span>
+    <h2 class="sc-title">Poland Behind the Fantasy</h2>
+    <p class="sc-subtitle">Peel back the magic, and you'll find a real country underneath.</p>
+    <div class="tab-row">
+      <button class="tab-b on" data-t="slavic">Slavic Folklore</button>
+      <button class="tab-b" data-t="hist">Harsh History</button>
+      <button class="tab-b" data-t="myst">Rural Mysticism</button>
+      <button class="tab-b" data-t="med">Medieval Texture</button>
+      <button class="tab-b" data-t="moral">Grey Morality</button>
+    </div>
+    <div class="tp on" data-tp="slavic"><div class="tc"><h3>Rooted in Slavic Soil</h3><p>Andrzej Sapkowski went to Slavic roots — the same folklore that Polish grandmothers told in the countryside. Water spirits, forest wraiths, and shapeshifters come from a deep well of Slavic storytelling.</p><div class="qt">"Sapkowski transformed traditional Polish and Slavic mythological figures into characters that feel at once ancient and modern."</div></div></div>
+    <div class="tp" data-tp="hist"><div class="tc"><h3>Carved by Empires</h3><p>Poland was erased from the map for 123 years. It survived two world wars, occupation, and decades of Soviet influence. This isn't backstory — it's the emotional foundation of The Witcher's world.</p><p>When you see a village burned between advancing armies, you're seeing echoes of Polish history: survival through endurance and stubborn cultural memory.</p></div></div>
+    <div class="tp" data-tp="myst"><div class="tc"><h3>Superstition Lives in the Countryside</h3><p>In rural Poland, folk beliefs persisted alongside Christianity. Herbs hung above doors, crossroads were dangerous, and the forest was never just trees — it was territory.</p><p>Peasants fear monsters not because they're irrational, but because the world genuinely has things hiding in the dark.</p></div></div>
+    <div class="tp" data-tp="med"><div class="tc"><h3>Mud, Stone, and Timber</h3><p>Rough-hewn timber, smoky taverns, crumbling castles, roads that turn to swamp. This reflects the real medieval landscape of Central Europe — functional, weather-beaten, atmospheric.</p><p>Walk through Kraków's old town and you can almost hear Dandelion tuning his lute in a corner.</p></div></div>
+    <div class="tp" data-tp="moral"><div class="tc"><h3>No Fairy-Tale Endings</h3><p>Polish storytelling tends to be skeptical. Good people suffer. Bad people prosper. The best you can do is make your choice and live with it.</p><div class="qt">"Evil is evil. Lesser, greater, middling — it's all the same. If I'm to choose between one evil and another, I'd rather not choose at all."</div></div></div>
+  </div>
+</section>
+
+<svg class="organic-divider" viewBox="0 0 600 60"><path d="M300,5 C270,18 220,25 150,28 C80,30 30,22 0,30"/><path d="M300,5 C330,18 380,25 450,28 C520,30 570,22 600,30"/></svg>
+
+<!-- ====== GREETING ====== -->
+<section id="greet" class="scene">
+  <div class="root-accent root-left"></div>
+  <div class="scene-inner reveal">
+    <span class="sc-label">Before you enter any tavern</span>
+    <h2 class="sc-title">A Polish Greeting</h2>
+    <p class="sc-subtitle">Learn how to say hello — the first spell any traveler should know.</p>
+    <div class="gr-row">
+      <div class="gr-card"><div class="gr-word">Cześć</div><div class="gr-phon">/ cheshch /</div><div class="gr-mean">"Hi" / "Hello" — casual</div><button class="pr-btn" onclick="togPr(this)">🔊 Pronunciation</button><div class="pr-tip">Say <strong>"cheh-shch"</strong> — like "check" but ending with a soft "sh-ch" blend. A warm, breezy greeting you'd toss at a friend across the market square.</div><div class="gr-use">Use with friends, peers, or casual settings. Also works as "bye."</div></div>
+      <div class="gr-card"><div class="gr-word">Dzień dobry</div><div class="gr-phon">/ jen dob-rih /</div><div class="gr-mean">"Good day" — formal</div><button class="pr-btn" onclick="togPr(this)">🔊 Pronunciation</button><div class="pr-tip">Say <strong>"jen DOB-rih"</strong> — "dzień" sounds like "jen" with a soft "d." Rolls off the tongue once you stop overthinking it.</div><div class="gr-use">For someone older, professional settings, or strangers. The respectful default.</div></div>
+    </div>
+  </div>
+</section>
+
+<svg class="organic-divider" viewBox="0 0 600 60"><path d="M300,55 C280,42 240,35 180,32 C110,28 50,35 0,30"/><path d="M300,55 C320,42 360,35 420,32 C490,28 550,35 600,30"/></svg>
+
+<!-- ====== MONSTERS ====== -->
+<section id="monsters" class="scene">
+  <div class="root-accent root-right"></div>
+  <div class="scene-inner wide-inner reveal">
+    <span class="sc-label">Inherited nightmares</span>
+    <h2 class="sc-title">Folklore &amp; Monsters</h2>
+    <p class="sc-subtitle">The bestiary isn't invented. It's inherited. Tap to uncover their Slavic roots.</p>
+    <div class="m-grid">
+      <div class="m-card" onclick="togM(this)"><div class="m-content"><div class="eyes"><span class="eye"></span><span class="eye"></span></div><h3>Striga</h3><div class="m-type">Cursed One</div><p class="m-short">A cursed child whose rage still crawls beneath ruined stone.</p><div class="m-lore">The strzyga comes from ancient Slavic belief in people born with two souls. If one soul dies, the other returns as a bloodthirsty creature. King Foltest's cursed daughter — directly adapted from Polish legend.</div><div class="ftag">⚝ Slavic / Polish tradition</div><div class="tap">Tap for lore</div></div></div>
+      <div class="m-card" onclick="togM(this)"><div class="m-content"><div class="eyes"><span class="eye"></span><span class="eye"></span></div><h3>Leshen</h3><div class="m-type">Relict</div><p class="m-short">Ancient forest guardian bound to roots, antlers, and death.</p><div class="m-lore">The leshy is a Slavic guardian of the forest — a towering, antlered spirit who leads travelers astray. In Polish folklore, entering the deep forest meant entering the leshy's domain.</div><div class="ftag">⚝ Pan-Slavic forest spirit</div><div class="tap">Tap for lore</div></div></div>
+      <div class="m-card" onclick="togM(this)"><div class="m-content"><div class="eyes"><span class="eye"></span><span class="eye"></span></div><h3>Vodyanoy</h3><div class="m-type">Water Spirit</div><p class="m-short">He waits in dark water, patient and old.</p><div class="m-lore">The vodyanoy (wodnik) is a Slavic water demon dwelling in rivers and lakes. He drags the unwary beneath the surface. In Polish folklore, drowning was the work of the vodyanoy.</div><div class="ftag">⚝ Slavic water mythology</div><div class="tap">Tap for lore</div></div></div>
+      <div class="m-card" onclick="togM(this)"><div class="m-content"><div class="eyes"><span class="eye"></span><span class="eye"></span></div><h3>Noon Wraith</h3><div class="m-type">Specter</div><p class="m-short">The heat of forgotten fields still belongs to her.</p><div class="m-lore">The południca appears at high noon — a ghostly woman who punishes those who work during the midday heat. She causes heatstroke, madness, or death. Uniquely tied to rural agricultural life.</div><div class="ftag">⚝ Polish / Slavic rural legend</div><div class="tap">Tap for lore</div></div></div>
+      <div class="m-card" onclick="togM(this)"><div class="m-content"><div class="eyes"><span class="eye"></span><span class="eye"></span></div><h3>Werewolf</h3><div class="m-type">Therianthrope</div><p class="m-short">Cursed, not chosen. A victim, not a predator.</p><div class="m-lore">The Polish wilkołak is cursed, not chosen. Unlike Western werewolves, the Slavic version is a victim of witchcraft or divine punishment. In The Witcher, lycanthropy carries the same tragic weight.</div><div class="ftag">⚝ Polish werewolf tradition</div><div class="tap">Tap for lore</div></div></div>
+      <div class="m-card" onclick="togM(this)"><div class="m-content"><div class="eyes"><span class="eye"></span><span class="eye"></span></div><h3>Botchling</h3><div class="m-type">Cursed Spirit</div><p class="m-short">Born of guilt, neglect, and an unmarked grave.</p><div class="m-lore">Babies who died before baptism could return as malevolent spirits. The botchling draws directly from this dark corner of Slavic superstition — grotesque, tragic, and deeply unsettling.</div><div class="ftag">⚝ Slavic folk belief</div><div class="tap">Tap for lore</div></div></div>
+    </div>
+  </div>
+</section>
+
+<svg class="organic-divider" viewBox="0 0 600 60"><path d="M300,5 C260,20 200,28 120,30 C60,31 20,25 0,30"/><path d="M300,5 C340,20 400,28 480,30 C540,31 580,25 600,30"/></svg>
+
+<!-- ====== FOOD ====== -->
+<section id="food" class="scene">
+  <div class="warm-glow"></div>
+  <div class="root-accent root-left"></div>
+  <div class="scene-inner reveal">
+    <span class="sc-label">Even a Witcher needs to eat</span>
+    <h2 class="sc-title">A Taste of Poland</h2>
+    <p class="sc-subtitle">Step into the tavern. The fire's warm, and the food is real.</p>
+    <div class="food-hero"><span class="fi">🥟</span><h3>Pierogi</h3><div class="dtag">Poland's most iconic dish</div><p>Delicate dumplings filled with potato and cheese (<em>ruskie</em>), meat, or cabbage and mushrooms. Pan-fried or boiled, with sour cream and crispy onions. Every family has their own recipe. Pierogi aren't just food — they're identity.</p></div>
+    <div class="food-row">
+      <div class="food-sm"><div class="si">🍲</div><h4>Bigos</h4><p>"Hunter's stew" — sauerkraut, cabbage, and meats. Tastes better the next day.</p></div>
+      <div class="food-sm"><div class="si">🥣</div><h4>Żurek</h4><p>Sour rye soup with sausage and egg. Tangy, fermented, served in bread bowls.</p></div>
+    </div>
+  </div>
+</section>
+
+<svg class="organic-divider" viewBox="0 0 600 60"><path d="M300,55 C270,40 220,32 160,30 C90,28 40,35 0,30"/><path d="M300,55 C330,40 380,32 440,30 C510,28 560,35 600,30"/></svg>
+
+<!-- ====== QUIRKY + QUIZ ====== -->
+<section id="quirky" class="scene">
+  <div class="root-accent root-right"></div>
+  <div class="scene-inner wide-inner reveal">
+    <span class="sc-label">Strange, charming, true</span>
+    <h2 class="sc-title">Quirky Polish Flavor</h2>
+    <p class="sc-subtitle">Small things that give Poland its texture.</p>
+    <div class="qk-grid">
+      <div class="qk"><div class="qi">🧂</div><h4>"Not my circus, not my monkeys"</h4><p><em>"Nie mój cyrk, nie moje małpy."</em> Meaning: not my problem.</p></div>
+      <div class="qk"><div class="qi">🪑</div><h4>Corner seat superstition</h4><p>Sit at the corner = no marriage for seven years. Strategic seating.</p></div>
+      <div class="qk"><div class="qi">🎂</div><h4>Name days over birthdays</h4><p><em>Imieniny</em> — your name day is basically a second birthday.</p></div>
+      <div class="qk"><div class="qi">🍄</div><h4>Mushroom picking is sacred</h4><p>Autumn ritual. Part hobby, part obsession. Very Witcher-adjacent.</p></div>
+      <div class="qk"><div class="qi">🧊</div><h4>Complaints as bonding</h4><p><em>Narzekanie</em> — complaining together is Polish friendship glue.</p></div>
+      <div class="qk"><div class="qi">🥒</div><h4>Pickle juice cure</h4><p>The unofficial hangover medicine. Sour, salty, trusted for generations.</p></div>
+    </div>
+    <div class="quiz-box" id="qbox">
+      <div class="qz-title">Path of the Wanderer</div>
+      <div class="qz-sub">A knowledge trial — your answers shape the path.</div>
+      <div class="qz-dots" id="qdots"></div>
+      <div class="qz-q" id="qq"></div>
+      <div class="qz-opts" id="qopts"></div>
+      <div class="qz-fb" id="qfb"></div>
+      <button class="qz-next" id="qnext" onclick="qNext()">Continue →</button>
+      <div class="qz-res" id="qres" style="display:none"></div>
+    </div>
+  </div>
+</section>
+
+<svg class="organic-divider" viewBox="0 0 600 60"><path d="M300,5 C290,25 280,45 275,55"/><path d="M300,5 C310,25 320,45 325,55"/></svg>
+
+<!-- ====== CLOSING ====== -->
+<section id="closing" class="scene">
+  <div class="scene-inner reveal">
+    <h2 class="sc-title" style="text-align:center">The Forest Remembers</h2>
+    <div class="cl-text">
+      <p>The Witcher is not just fantasy entertainment. It is a doorway — into Polish storytelling, language, folklore, atmosphere, and the country's deep comfort with <em>complexity</em>.</p>
+      <p>Through Geralt's eyes, we see a world where nothing is simple, where humor lives beside horror, and where every village hides a story older than its walls. That world isn't invented. It's <em>inherited</em>.</p>
+      <p>Poland gave The Witcher its soul. The Witcher returns the favor by making the world curious about Poland.</p>
+    </div>
+    <div class="cl-sign">— Dobranoc. Goodnight. —</div>
+  </div>
+</section>
+
+</main>
+
+<footer>Poland Through Witcher Eyes — A cultural showcase. Not affiliated with CD Projekt Red or Andrzej Sapkowski.</footer>
+
+<script>
+/*================================================
+  LOADING — tree draws itself, then enter
+==================================================*/
+(function(){
+  const paths = document.querySelectorAll('#loader-tree path');
+  const dots = document.querySelectorAll('#loader-tree .rune-dot');
+  paths.forEach(p => {
+    const len = p.getTotalLength();
+    p.style.setProperty('--len', len);
+    p.style.strokeDasharray = len;
+    p.style.strokeDashoffset = len;
+  });
+  let d = 200;
+  paths.forEach((p,i) => {
+    setTimeout(()=>{
+      p.style.transition = `stroke-dashoffset ${1+Math.random()*.5}s cubic-bezier(.22,1,.36,1)`;
+      p.style.strokeDashoffset = '0';
+    }, d + i*90);
+  });
+  const treeTime = d + paths.length*90 + 800;
+  setTimeout(()=> dots.forEach((dot,i)=>{ setTimeout(()=>{ dot.style.transition='opacity .6s'; dot.style.opacity='.7'; }, i*150); }), treeTime-400);
+  setTimeout(()=>{ const t=document.querySelector('.l-title'); t.style.transition='opacity 1s,transform 1s'; t.style.opacity='1'; t.style.transform='none'; }, treeTime);
+  setTimeout(()=>{ document.querySelector('.l-sub').style.transition='opacity .8s'; document.querySelector('.l-sub').style.opacity='1'; }, treeTime+400);
+  setTimeout(()=>{ document.querySelector('.l-enter').style.transition='opacity .6s,background .4s,border-color .4s,box-shadow .4s'; document.querySelector('.l-enter').style.opacity='1'; }, treeTime+800);
+})();
+
+document.getElementById('l-enter').onclick = function(){
+  document.getElementById('loader').classList.add('done');
+  setTimeout(()=>{
+    document.querySelectorAll('.atmo-fog').forEach(f=>f.classList.add('on'));
+    initGSAP(); initDust();
+  }, 600);
+  setTimeout(()=>{
+    gsap.to('#h-title',{opacity:1,y:0,duration:1.2,ease:'power3.out'});
+    gsap.to('#h-tag',{opacity:1,y:0,duration:1,delay:.3,ease:'power3.out'});
+    gsap.to('#h-btn',{opacity:1,y:0,duration:.8,delay:.6,ease:'power3.out'});
+    gsap.to('#scroll-cue',{opacity:.4,duration:.6,delay:1.8});
+  }, 800);
+};
+
+/*================================================
+  GSAP
+==================================================*/
+function initGSAP(){
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Nav
+  ScrollTrigger.create({ trigger:'#why', start:'top 90%',
+    onEnter:()=>document.getElementById('nav').classList.add('show'),
+    onLeaveBack:()=>document.getElementById('nav').classList.remove('show') });
+  ScrollTrigger.create({ start:50, onUpdate:s=>{
+    document.getElementById('nav').classList.toggle('scrolled',s.scroll()>50); }});
+
+  // Reveals
+  document.querySelectorAll('.reveal').forEach(el=>{
+    gsap.from(el,{ opacity:0, y:80, duration:1.2, ease:'power4.out',
+      scrollTrigger:{ trigger:el, start:'top 85%', toggleActions:'play none none reverse' }});
+  });
+
+  // Organic dividers
+  document.querySelectorAll('.organic-divider path').forEach(p=>{
+    const len=p.getTotalLength();
+    gsap.fromTo(p,{strokeDasharray:len,strokeDashoffset:len},
+      {strokeDashoffset:0, duration:1.5, ease:'power2.inOut',
+       scrollTrigger:{trigger:p,start:'top 90%',toggleActions:'play none none reverse'}});
+  });
+
+  // Root accents
+  document.querySelectorAll('.root-accent').forEach(r=>{
+    gsap.from(r,{opacity:0,x:r.classList.contains('root-left')?-40:40,duration:1.2,ease:'power3.out',
+      scrollTrigger:{trigger:r.parentElement,start:'top 80%',toggleActions:'play none none reverse'}});
+  });
+
+  // Active nav link
+  document.querySelectorAll('section[id]').forEach(sec=>{
+    ScrollTrigger.create({ trigger:sec, start:'top center', end:'bottom center',
+      onToggle:s=>{ if(s.isActive){
+        document.querySelectorAll('.nav-links a').forEach(a=>a.classList.remove('active'));
+        const l=document.querySelector(`.nav-links a[data-s="${sec.id}"]`);
+        if(l)l.classList.add('active');
+      }}});
+  });
+}
+
+/*================================================
+  PARTICLES — Dust/embers
+==================================================*/
+function initDust(){
+  const c=document.getElementById('dust-canvas');
+  const cx=c.getContext('2d');
+  let w,h,pts=[];
+  function rs(){ w=c.width=innerWidth; h=c.height=innerHeight; }
+  rs(); window.addEventListener('resize',rs);
+  const n=innerWidth<768?30:55;
+  function mk(){
+    const isEmber=Math.random()>.7;
+    return {
+      x:Math.random()*w, y:isEmber?h+10:Math.random()*h,
+      r:isEmber?Math.random()*2+.5:Math.random()*1.2+.3,
+      vx:(Math.random()-.5)*(isEmber?.3:.15),
+      vy:isEmber?-(Math.random()*.4+.15):(Math.random()-.5)*.1-.04,
+      a:isEmber?Math.random()*.3+.08:Math.random()*.15+.03,
+      color:isEmber?'200,150,60':'160,155,130',
+      ember:isEmber, age:0, life:400+Math.random()*400, pulse:Math.random()*6.28
+    };
+  }
+  for(let i=0;i<n;i++) pts.push(mk());
+  (function loop(){
+    cx.clearRect(0,0,w,h);
+    pts.forEach((p,i)=>{
+      p.x+=p.vx; p.y+=p.vy; p.age++; p.pulse+=.02;
+      const fi=Math.min(p.age/40,1), fo=Math.max((p.life-p.age)/40,0);
+      let op=p.a*Math.min(fi,fo);
+      if(!p.ember) op*=.5+Math.sin(p.pulse)*.5;
+      cx.beginPath(); cx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      cx.fillStyle=`rgba(${p.color},${op})`; cx.fill();
+      if(p.ember&&op>.06){
+        cx.beginPath(); cx.arc(p.x,p.y,p.r*2.5,0,Math.PI*2);
+        cx.fillStyle=`rgba(${p.color},${op*.12})`; cx.fill();
+      }
+      if(p.age>p.life||p.y<-20||p.x<-20||p.x>w+20) pts[i]=mk();
+    });
+    requestAnimationFrame(loop);
+  })();
+}
+
+/*================================================
+  AUDIO — Procedural
+==================================================*/
+let audioCtx,masterG,audioOn=false;
+document.getElementById('audio-btn').onclick=function(){
+  if(!audioCtx){
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    masterG=audioCtx.createGain(); masterG.gain.value=0; masterG.connect(audioCtx.destination);
+    // Drone
+    const d=audioCtx.createOscillator(); d.type='sine'; d.frequency.value=55;
+    const dg=audioCtx.createGain(); dg.gain.value=.1;
+    const lfo=audioCtx.createOscillator(); lfo.frequency.value=.08;
+    const lg=audioCtx.createGain(); lg.gain.value=4;
+    lfo.connect(lg); lg.connect(d.frequency); d.connect(dg); dg.connect(masterG); d.start(); lfo.start();
+    // Harmonic
+    const h=audioCtx.createOscillator(); h.type='sine'; h.frequency.value=82.5;
+    const hg=audioCtx.createGain(); hg.gain.value=.05;
+    h.connect(hg); hg.connect(masterG); h.start();
+    // Wind
+    const bs=2*audioCtx.sampleRate; const buf=audioCtx.createBuffer(1,bs,audioCtx.sampleRate);
+    const nd=buf.getChannelData(0); for(let i=0;i<bs;i++) nd[i]=Math.random()*2-1;
+    const ns=audioCtx.createBufferSource(); ns.buffer=buf; ns.loop=true;
+    const flt=audioCtx.createBiquadFilter(); flt.type='bandpass'; flt.frequency.value=300; flt.Q.value=.5;
+    const wg=audioCtx.createGain(); wg.gain.value=.04;
+    const wl=audioCtx.createOscillator(); wl.frequency.value=.12;
+    const wlg=audioCtx.createGain(); wlg.gain.value=80;
+    wl.connect(wlg); wlg.connect(flt.frequency);
+    ns.connect(flt); flt.connect(wg); wg.connect(masterG); ns.start(); wl.start();
+  }
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  audioOn=!audioOn;
+  this.textContent=audioOn?'🔊':'🔇';
+  this.classList.toggle('on',audioOn);
+  masterG.gain.linearRampToValueAtTime(audioOn?.6:0,audioCtx.currentTime+1.5);
+};
+function ping(f=500,d=.08){
+  if(!audioOn||!audioCtx)return;
+  const o=audioCtx.createOscillator(); o.type='sine'; o.frequency.value=f;
+  const g=audioCtx.createGain(); g.gain.value=.03;
+  g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);
+  o.connect(g); g.connect(masterG); o.start(); o.stop(audioCtx.currentTime+d);
+}
+
+/*================================================
+  INTERACTIONS
+==================================================*/
+// Mobile nav
+document.getElementById('ham').onclick=function(){this.classList.toggle('open');document.getElementById('nlinks').classList.toggle('open')};
+document.querySelectorAll('.nav-links a').forEach(a=>a.addEventListener('click',()=>{document.getElementById('ham').classList.remove('open');document.getElementById('nlinks').classList.remove('open')}));
+
+// Expand cards
+function toggleEx(c){const o=c.classList.contains('open');c.parentElement.querySelectorAll('.ex-card').forEach(x=>x.classList.remove('open'));if(!o)c.classList.add('open');ping(o?400:550,.1)}
+
+// Tabs
+document.querySelectorAll('.tab-b').forEach(b=>{b.addEventListener('click',()=>{const t=b.dataset.t;const s=b.closest('.scene-inner');s.querySelectorAll('.tab-b').forEach(x=>x.classList.remove('on'));s.querySelectorAll('.tp').forEach(x=>x.classList.remove('on'));b.classList.add('on');s.querySelector(`[data-tp="${t}"]`).classList.add('on');ping(500,.06)})});
+
+// Pronunciation
+function togPr(b){const t=b.nextElementSibling;const s=!t.classList.contains('show');t.classList.toggle('show');b.textContent=s?'🔇 Hide':'🔊 Pronunciation';ping(s?660:440,.08)}
+
+// Monster cards
+function togM(c){c.classList.toggle('open');ping(c.classList.contains('open')?300:500,.1)}
+
+/*================================================
+  QUIZ — Path of the Wanderer
+==================================================*/
+const QD=[
+  {q:"What is the Striga's folklore origin?",o:["A person born with two souls","A witch who transforms at full moon","A cursed animal spirit","A river spirit"],c:0,f:"The strzyga — someone born with two souls. When one dies, the other returns monstrous."},
+  {q:"What does 'Dzień dobry' mean?",o:["Goodbye","Good day / Hello (formal)","Thank you","Good night"],c:1,f:"Dzień dobry — 'Good day.' The standard formal Polish greeting."},
+  {q:"What is bigos?",o:["Polish bread","A sour rye soup","A hunter's stew with sauerkraut and meats","A sweet pastry"],c:2,f:"Bigos — the hunter's stew. Sauerkraut, cabbage, meats. Better the next day."},
+  {q:"Which saying means 'not my problem'?",o:["\"Nie mój cyrk, nie moje małpy\"","\"Gdzie kucharek sześć...\"","\"Co ma wisieć, nie utonie\"","\"Kto rano wstaje...\""],c:0,f:"\"Not my circus, not my monkeys\" — the most perfectly Polish expression."},
+  {q:"Who created The Witcher?",o:["Stanisław Lem","CD Projekt Red","Andrzej Sapkowski","Olga Tokarczuk"],c:2,f:"Andrzej Sapkowski — the Polish author who started the saga in the 1980s."}
+];
+let qi=0,qs=0,qa=false;
+function qInit(){
+  const d=document.getElementById('qdots'); d.innerHTML='';
+  QD.forEach((_,i)=>{const dot=document.createElement('div');dot.className='qz-dot'+(i===0?' now':'');d.appendChild(dot)});
+  qRen();
+}
+function qRen(){
+  if(qi>=QD.length){qRes();return}
+  const q=QD[qi];
+  document.getElementById('qq').textContent=q.q;
+  document.getElementById('qfb').textContent='';document.getElementById('qfb').className='qz-fb';
+  document.getElementById('qnext').style.display='none'; qa=false;
+  document.querySelectorAll('.qz-dot').forEach((d,i)=>d.classList.toggle('now',i===qi));
+  const o=document.getElementById('qopts'); o.innerHTML='';
+  q.o.forEach((opt,i)=>{const b=document.createElement('button');b.className='qz-opt';b.textContent=opt;b.addEventListener('click',()=>qAns(i,b));o.appendChild(b)});
+}
+function qAns(idx,btn){
+  if(qa)return; qa=true;
+  const q=QD[qi]; document.querySelectorAll('.qz-opt').forEach(b=>b.disabled=true);
+  const fb=document.getElementById('qfb'); const dot=document.querySelectorAll('.qz-dot')[qi];
+  if(idx===q.c){btn.classList.add('ok');fb.textContent='✓ '+q.f;fb.className='qz-fb good';dot.classList.add('ok');qs++;ping(700,.15)}
+  else{btn.classList.add('no');document.querySelectorAll('.qz-opt')[q.c].classList.add('ok');fb.textContent='✗ '+q.f;fb.className='qz-fb bad';dot.classList.add('no');ping(200,.2)}
+  document.getElementById('qnext').style.display='block';
+}
+function qNext(){qi++;qRen();ping(500,.06)}
+function qRes(){
+  document.getElementById('qq').textContent='';document.getElementById('qopts').innerHTML='';
+  document.getElementById('qfb').textContent='';document.getElementById('qnext').style.display='none';
+  const p=qs/QD.length;let t,m,a;
+  if(p===1){t='The Path Is Clear';m=qs+'/'+QD.length+' — You walk the Continent with open eyes.';a='Spirit Archetype: The Sage of the Forest'}
+  else if(p>=.6){t='A Wanderer With Promise';m=qs+'/'+QD.length+' — Solid knowledge. You\'d survive a Novigrad tavern.';a='Spirit Archetype: The Wayward Traveler'}
+  else{t='The Journey Begins';m=qs+'/'+QD.length+' — Every Witcher starts somewhere.';a='Spirit Archetype: The Awakening Root'}
+  const r=document.getElementById('qres');r.style.display='block';
+  r.innerHTML='<h4>'+t+'</h4><p>'+m+'</p><div class="arch">'+a+'</div>';
+  gsap.from(r,{opacity:0,y:15,duration:.8,ease:'power3.out'});
+}
+qInit();
+</script>
+</body>
+</html>
